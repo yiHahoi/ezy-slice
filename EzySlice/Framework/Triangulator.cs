@@ -327,6 +327,7 @@ namespace EzySlice {
 
             // ensure List does not dynamically grow, performing copy ops each time!
             tri = new List<Triangle>(triCount / 3);
+            List<Triangle> triOutput = new List<Triangle>(triCount / 3);
 
             float width = maxDivX - minDivX;
             float height = maxDivY - minDivY;
@@ -334,7 +335,7 @@ namespace EzySlice {
             int indexCount = 0;
 
             // generate both the vertices and uv's in this loop
-            for (int i = 0; i < /*triCount*/vertCount; i += 1)
+            for (int i = 0; i < vertCount; i += 1)
             {
                 // the Vertices in our triangle
                 Mapped2D posA = hulls[indexCount];
@@ -355,7 +356,7 @@ namespace EzySlice {
                 uvC.x = (uvC.x - minDivX) / width;
                 uvC.y = (uvC.y - minDivY) / height;
 
-                Debug.Log("triangulo N°: " + i + ", " +centralPoint + " " + posB.originalValue + " " + posC.originalValue);
+                //Debug.Log("triangulo N°: " + i + ", " +centralPoint + " " + posB.originalValue + " " + posC.originalValue);
                 Triangle newTriangle = new Triangle(centralPoint, posB.originalValue, posC.originalValue);
 
                 // ensure our UV coordinates are mapped into the requested TextureRegion
@@ -365,12 +366,127 @@ namespace EzySlice {
                 newTriangle.SetNormal(normal, normal, normal);
                 newTriangle.ComputeTangents();
 
-                tri.Add(newTriangle);
+                triOutput.Add(newTriangle);
 
                 indexCount++;
             }
 
+            // se pueden subdividir los triangulos para agregar densidad de vertices al corte
+            // falta una funcion que controle el total de subdivisiones necesarios para una densidad de vertices dada
+            tri = subdivision_type1(triOutput);
+            //tri = subdivision_type1(tri);
+            //tri = subdivision_type1(tri);
+            //tri = subdivision_type1(tri);
+
             return true;
         }
+
+
+        // Subdivision mas uniforme (conviene hacer un dibujo para definir los vectores de construccion!!)
+        public static List<Triangle> subdivision_type1(List<Triangle> tris)
+        {
+            List<Triangle> result = new List<Triangle>();
+
+            // se subdivide cada triangulo en 4 subtriangulos
+            // dividiendo las 3 aristas en la mitad (3 nuevos vertices)
+            foreach (Triangle t in tris)
+            {
+                // coordenadas de los vertices del triangulo inicial 
+                Vector3 p1 = t.positionA;
+                Vector3 p2 = t.positionB;
+                Vector3 p3 = t.positionC;
+                Vector3 p1p2 = (p1 + p2) / 2;
+                Vector3 p2p3 = (p2 + p3) / 2;
+                Vector3 p3p1 = (p3 + p1) / 2;
+
+                // coordenadas UV de los vertices del triangulo inicial
+                Vector2 p1UV = t.uvA;
+                Vector2 p2UV = t.uvB;
+                Vector2 p3UV = t.uvC;
+                Vector2 p1p2UV = (p1UV + p2UV )/ 2;
+                Vector2 p2p3UV = (p2UV + p3UV) / 2;
+                Vector2 p3p1UV = (p3UV + p1UV) / 2;
+
+                // normal del vertice A del triangulo (vertice B y C usan la misma normal)
+                Vector3 normal = t.normalA;
+
+                // se crean los 4 subtriangulos
+                Triangle x = new Triangle(p1, p1p2, p3p1);
+                Triangle y = new Triangle(p1p2, p2, p2p3);
+                Triangle z = new Triangle(p2p3, p3, p3p1);
+                Triangle w = new Triangle(p1p2, p2p3, p3p1);
+
+                // se setean las coordenadas UV de cada triangulo
+                x.SetUV(p1UV, p1p2UV, p3p1UV);
+                y.SetUV(p1p2UV, p2UV, p2p3UV);
+                z.SetUV(p2p3UV, p3UV, p3p1UV);
+                w.SetUV(p1p2UV, p2p3UV, p3p1UV);
+
+                // se setean las normales de cada triangulo
+                x.SetNormal(normal, normal, normal);
+                y.SetNormal(normal, normal, normal);
+                z.SetNormal(normal, normal, normal);
+                w.SetNormal(normal, normal, normal);
+
+                // se guardan los triangulos creados en la lista de triangulos resultantes
+                result.Add(x);
+                result.Add(y);
+                result.Add(z);
+                result.Add(w);
+            }
+
+            return result;
+
+        }
+
+
+        public static List<Triangle> subdivision_type2(List<Triangle> tris)
+        {
+            List<Triangle> result = new List<Triangle>();
+
+            // se subdivide cada triangulo en 3 mas
+            foreach(Triangle t in tris)
+            {
+                // coordenadas de los vertices del triangulo inicial 
+                Vector3 p1 = t.positionA;
+                Vector3 p2 = t.positionB;
+                Vector3 p3 = t.positionC;
+                Vector3 center = (p1 + p2 + p3) / 3;
+
+                // coordenadas UV de los vertices del triangulo inicial
+                Vector2 uvA = t.uvA;
+                Vector2 uvB = t.uvB;
+                Vector2 uvC = t.uvC;
+                Vector2 centerUV = (uvA + uvB + uvC) / 3;
+
+                // normal del vertice A del triangulo (vertice B y C usan la misma normal)
+                Vector3 normal = t.normalA;
+
+                // se crean los 3 subtriangulos
+                Triangle x = new Triangle(center, p3, p1);
+                Triangle y = new Triangle(center, p2, p3);
+                Triangle z = new Triangle(center, p1, p2);
+
+                // se setean las coordenadas UV de cada triangulo
+                x.SetUV(centerUV, uvC, uvA);
+                y.SetUV(centerUV, uvB, uvC);
+                z.SetUV(centerUV, uvA, uvB);
+
+                // se setean las normales de cada triangulo
+                x.SetNormal(normal,normal,normal);
+                y.SetNormal(normal,normal,normal);
+                z.SetNormal(normal,normal,normal);
+
+                // se guardan los triangulos creados en la lista de triangulos resultantes
+                result.Add(x);
+                result.Add(y);
+                result.Add(z);
+            }
+
+            return result;
+
+        }
+
     }
+
 }
