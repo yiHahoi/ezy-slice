@@ -479,7 +479,7 @@ namespace EzySlice {
         private static List<Triangle> CreateFrom(List<Vector3> intPoints, Vector3 planeNormal, TextureRegion region) {
             List<Triangle> tris;
 
-            if (Triangulator.MonotoneChain(intPoints, planeNormal, out tris, region)) {
+            if (Triangulator.MonotoneChain_to_center(intPoints, planeNormal, out tris, region)) {
                 return tris;
             }
 
