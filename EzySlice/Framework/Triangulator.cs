@@ -371,19 +371,22 @@ namespace EzySlice {
                 indexCount++;
             }
 
+            tri = triOutput;
+
             // se pueden subdividir los triangulos para agregar densidad de vertices al corte
             // falta una funcion que controle el total de subdivisiones necesarios para una densidad de vertices dada
-            tri = subdivision_type1(triOutput);
-            //tri = subdivision_type1(tri);
-            //tri = subdivision_type1(tri);
-            //tri = subdivision_type1(tri);
+            tri = subdivision_type1(triOutput, texRegion);
+            tri = subdivision_type1(tri, texRegion);
+            tri = subdivision_type1(tri, texRegion);
+            tri = subdivision_type1(tri, texRegion);
+            tri = subdivision_type1(tri, texRegion);
 
             return true;
         }
 
 
         // Subdivision mas uniforme (conviene hacer un dibujo para definir los vectores de construccion!!)
-        public static List<Triangle> subdivision_type1(List<Triangle> tris)
+        public static List<Triangle> subdivision_type1(List<Triangle> tris, TextureRegion texRegion)
         {
             List<Triangle> result = new List<Triangle>();
 
@@ -416,17 +419,23 @@ namespace EzySlice {
                 Triangle z = new Triangle(p2p3, p3, p3p1);
                 Triangle w = new Triangle(p1p2, p2p3, p3p1);
 
-                // se setean las coordenadas UV de cada triangulo
-                x.SetUV(p1UV, p1p2UV, p3p1UV);
-                y.SetUV(p1p2UV, p2UV, p2p3UV);
-                z.SetUV(p2p3UV, p3UV, p3p1UV);
-                w.SetUV(p1p2UV, p2p3UV, p3p1UV);
+                // se setean las coordenadas UV de cada triangulo a la region correspondiente en la textura
+                x.SetUV(texRegion.Map(p1UV), texRegion.Map(p1p2UV), texRegion.Map(p3p1UV));
+                y.SetUV(texRegion.Map(p1p2UV), texRegion.Map(p2UV), texRegion.Map(p2p3UV));
+                z.SetUV(texRegion.Map(p2p3UV), texRegion.Map(p3UV), texRegion.Map(p3p1UV));
+                w.SetUV(texRegion.Map(p1p2UV), texRegion.Map(p2p3UV), texRegion.Map(p3p1UV));
 
                 // se setean las normales de cada triangulo
                 x.SetNormal(normal, normal, normal);
                 y.SetNormal(normal, normal, normal);
                 z.SetNormal(normal, normal, normal);
                 w.SetNormal(normal, normal, normal);
+
+                // se setean las tangentes de cada triangulo
+                x.ComputeTangents();
+                y.ComputeTangents();
+                z.ComputeTangents();
+                w.ComputeTangents();
 
                 // se guardan los triangulos creados en la lista de triangulos resultantes
                 result.Add(x);
@@ -440,7 +449,7 @@ namespace EzySlice {
         }
 
 
-        public static List<Triangle> subdivision_type2(List<Triangle> tris)
+        public static List<Triangle> subdivision_type2(List<Triangle> tris, TextureRegion texRegion)
         {
             List<Triangle> result = new List<Triangle>();
 
@@ -468,14 +477,19 @@ namespace EzySlice {
                 Triangle z = new Triangle(center, p1, p2);
 
                 // se setean las coordenadas UV de cada triangulo
-                x.SetUV(centerUV, uvC, uvA);
-                y.SetUV(centerUV, uvB, uvC);
-                z.SetUV(centerUV, uvA, uvB);
+                x.SetUV(texRegion.Map(centerUV), texRegion.Map(uvC), texRegion.Map(uvA));
+                y.SetUV(texRegion.Map(centerUV), texRegion.Map(uvB), texRegion.Map(uvC));
+                z.SetUV(texRegion.Map(centerUV), texRegion.Map(uvA), texRegion.Map(uvB));
 
                 // se setean las normales de cada triangulo
                 x.SetNormal(normal,normal,normal);
                 y.SetNormal(normal,normal,normal);
                 z.SetNormal(normal,normal,normal);
+
+                // se setean las tangentes de cada triangulo
+                x.ComputeTangents();
+                y.ComputeTangents();
+                z.ComputeTangents();
 
                 // se guardan los triangulos creados en la lista de triangulos resultantes
                 result.Add(x);
